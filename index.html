@@ -10,22 +10,50 @@
   <body>
     <script type="text/javascript">
       const modelo = tf.sequential()
+      //configuracion de la capa de procesamiento
       const oculta = tf.layers.dense({
         units:4,
         inputShape:[2],
         activation: 'sigmoid'
       })
       modelo.add(oculta)
-      
+      //capa que muestra los resultados
       const salida= tf.layers.dense({
         units:1,
         activation:'sigmoid'
       })
       modelo.add(salida)
       const sgdOpciones = tf.train.sgd(0.1)
+      //optimizaciones
       modelo.compile({
         optimizer: sgdOpciones,
         loss: tf.losses.meanSquaredError
+      })
+      
+      const x1 = tf.tensor2d([
+        [0,0],
+        [0.2,0.2],
+        [0.4,0.4]
+      ])
+      
+      const x2 = tf.tensor2d([
+        [0.1],
+        [0.3],
+        [0.5]
+      ])
+      
+      async function intento() {
+        for (var i = 0; i < 80; i++) {
+          //valores de entrada x1
+          //debe entrenarse para llenar x2
+          //epochs son repeticiones
+          const respuesta = await modelo.fit(x1,x2,{suffle:true, epochs:200})
+          console.log(respuesta.history.loss[0])
+        }
+      }
+      intento().then(()=>{
+        const salida = modelo.predict(x1);
+        salida.print();
       })
       
     </script>
