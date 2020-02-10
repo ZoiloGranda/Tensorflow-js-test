@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.0.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/p5@0.10.2/lib/p5.js"></script>
+  </head>
+  <body>
+    <script type="text/javascript">
+      let x_pos = [];
+      let y_pos = [];
+      let w,b; //w es el angulo de la linea. b es la distancia desde el punto inicial de la linea hacia abajo
+      
+      const learningRate = 0.5;//escala en que se va a mover la linea para encontrar el punto medio
+      const optimizer = tf.train.sgd(learningRate);
+      
+      //funcion de p5.js
+      function setup(){
+        createCanvas(400,400);
+        background(0);
+        //se les pone random al principio para que cree una linea donde sea
+        w = tf.variable(tf.scalar(random(1)))
+        b = tf.variable(tf.scalar(random(1)))
+      }
+      
+      function predecir(x) {
+        const xs = tf.tensor1d(x);
+        const ys = xs.mul(w).add(b)//y =w*x+b
+        return ys;
+      }
+      
+      //funcion de p5.js
+      function mousePressed(){
+          let x = map(mouseX, 0, width, 0,1)
+          let y = map(mouseY, 0, height, 1,0)
+          x_pos.push(x)
+          y_pos.push(y)
+      }
+      
+      //funcion de p5.js
+      function draw(){
+        background(0);
+        stroke(255)
+        strokeWeight(8)
+        for (var i = 0; i < x_pos.length; i++) {
+          //obtener coordenadas para ubicar el punto
+          let px =map(x_pos[i],0,1,0,width)
+          let py =map(y_pos[i],0,1,height,0)
+          //dibujar el punto
+          point(px,py);
+        }
+        tf.tidy(()=>{
+          if (x_pos.length>0) {
+            const ys = tf.tensor1d(y_pos);
+            optimizer.minimize(()=>predecir(x_pos).sub(ys).square().mean());
+          }
+        })
+        //predecir([0,1]) es dentro de la escala del canvas
+        let y_predecido = tf.tidy(()=>predecir([0,1]));
+        //dataSync() devuelve el valor del tensor despues que se calcula
+        let val_y_pred = y_predecido.dataSync()
+        y_predecido.dispose();
+        let x1 = map(0,0,1,0,width)//x1 es la esquina inferior izquierda
+        let x2 = map(1,0,1,0,width)//x1 es la esquina inferior derecha
+        let y1 = map(val_y_pred[0],0,1,height,0)//y1 es la esquina inferior derecha
+        let y2 = map(val_y_pred[1],0,1,height,0)//y2 es la esquina superior derecha
+        line(x1,y1,x2,y2)
+      }
+    </script>
+  </body>
+</html>
